@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,head,body,div, ul, li, button {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .con {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            padding: 10px 0;
+        }
+        .list {
+            height: calc(100% - 70px);
+            list-style: none;
+            width: calc(100% - 20px);
+            margin: 0 10px;
+            font: normal normal 400 normal 15px/20px '黑体';
+            overflow-y: auto;
+        }
+        .list li {
+            padding: 10px;
+        }
+        .list li:nth-child(2n + 1) {
+            background-color: gray;
+        }
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            height: auto;
+            display: flex;
+            width: calc(100% - 20px);
+            margin: 0 10px;
+        }
+        .inp {
+            display: inline-block;
+            height: auto;
+            width: calc(100% - 100px);
+            background: gray;
+            padding: 10px;
+            outline: none;
+            font: normal normal 400 normal 15px/20px '黑体';
+        }
+        .footer button {
+            outline: none;
+            width: 100px;
+            border-radius: 0;
+            border: none;
+            background-color: lightgray;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="con">
+        <ul class="list" id="list"></ul>
+        <div class="footer">
+            <button id="send">发送</button>
+            <div contenteditable="true" class="inp" id="inp"></div>
+        </div>
+    </div>
+    <script>
+        const list = document.getElementById('list')
+        const sendBtn = document.getElementById('send')
+        const inpBox = document.getElementById('inp')
+
+        sendBtn.addEventListener('click', send)
+
+        const rawBody = {
+            messages: [
+                {
+                    role: "system",
+                    content:"You are an AI assistant called ‘ai’ or ‘智能机器人’ in Chinese that based on the language model gpt-3.5-turbo, you are helpful, creative, clever, friendly and honest.\n          Current date: " + new Date()
+                },
+                {
+                    role: "system",
+                    content: "You are a helpful assistant."
+                }
+            ],
+            model: "gpt-3.5",
+            stream: true
+        }
+
+        function send() {
+            const li = document.createElement('li')
+            const question = inpBox.innerHTML
+            if (question == '') return
+            
+            li.innerHTML = question
+            list.appendChild(li)
+            inpBox.innerHTML = ''
+            rawBody.messages.push({
+                role: "user",
+                content: question
+            })
+            ask()
+        }
+
+        function ask() {
+            let result = ''
+            let loading = true
+            let count = 0
+
+            const li = document.createElement('li')
+            li.innerText = result
+            list.appendChild(li)
+
+            const timer = setInterval(() => {
+                count++
+                if (!loading) {
+                    clearInterval(timer)
+                    return
+                }
+                let str = ''
+                for (let i=0; i<count%4; i++) {
+                    str += '.. '
+                }
+                li.innerText = str
+            }, 500)
+            fetch('https://service-d20dvkuc-1318437443.hk.apigw.tencentcs.com/v1/chat/completions', {
+                method: 'POST',
+                body: JSON.stringify(rawBody),
+                headers: {
+                    Origin:'https://ai.kunshanyuxin.com',
+                    Referer:'https://ai.kunshanyuxin.com/',
+                    'Content-Type':'application/json'
+                }
+            })
+            .then((res) => res.text())
+            .then((res) => {
+                const arr = res.match(/\{\"id\"\:([^\}\]\}].+?)\}\]\}/g)
+                arr.forEach((str) => {
+                    const obj = JSON.parse(str)
+                    result += obj?.choices?.[0]?.delta?.content || ''
+                })
+                li.innerText = result
+                rawBody.messages.push({
+                    role: "system",
+                    content: result
+                })
+            }).catch((err) => {
+                console.error(err)
+            }).finally(() => {
+                loading = false
+            })
+        }
+    </script>
+</body>
+</html>
