@@ -1,5 +1,9 @@
 {
   "name": "assistant",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/In-6026/vcExtension-aiChat.git"
+  },
   "displayName": "assistant",
   "description": "a vscode extension answer question",
   "version": "0.0.1",
